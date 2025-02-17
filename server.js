@@ -36,6 +36,7 @@ socketNamespace.on("connection", (socket) =>{
         position: { x: 0, y: 0, z: 0},
         quaternion: { x: 0, y: 0, z: 0, w: 0 },
         animation: "idle",
+        avatarSkin: ""
     };
     
 
@@ -47,6 +48,7 @@ socketNamespace.on("connection", (socket) =>{
 
     socket.on("setUserData", (userData) => {
         socket.userData.name = userData.name;
+        socket.userData.avatarSkin = userData.avatarSkin;
     });
 
     socket.on("send-message", (message, time) => {
@@ -67,7 +69,6 @@ socketNamespace.on("connection", (socket) =>{
         socket.userData.quaternion.z = player.quaternion[2];
         socket.userData.quaternion.w = player.quaternion[3];
         socket.userData.animation = player.animation;
-        socket.userData.avatarSkin = player.avatarSkin;
     });
 });
 setInterval(() => {
