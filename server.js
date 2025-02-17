@@ -23,6 +23,8 @@ app.get("*", (req,res) =>{
 
 
 //sockets
+
+//TODO: Create individual sockets/ hosting/ peer2peer networking.
 const gameSocket = io.of("/gameSocket");
 const connectedSockets = new Map();
 
