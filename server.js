@@ -86,7 +86,7 @@ setInterval(() => {
                 quaternion_z: socket.userData.quaternion.z,
                 quaternion_w: socket.userData.quaternion.w,
                 animation: socket.userData.animation,
-                avatarSkin: socket.userData.avatarSkin,
+                avatarSkin: socket.userData.avatarSkin, //TODO: shouldn't emit this data all the time. Think of a good way to solve that
             });
         }
     })
