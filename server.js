@@ -25,7 +25,7 @@ app.get("*", (req,res) =>{
 //sockets
 
 //TODO: Create individual sockets/ hosting/ peer2peer networking.
-const gameSocket = io.of("/gameSocket");
+const socketNamespace = io.of("/socketNamespace");
 const connectedSockets = new Map();
 
 socketNamespace.on("connection", (socket) =>{
@@ -45,7 +45,7 @@ socketNamespace.on("connection", (socket) =>{
     socket.on("disconnect", () => {
         console.log(`${socket.id} has disconnected.`);
         connectedSockets.delete(socket.id);
-        socketNamespace.emit("disconnect", socket.id);
+        socketNamespace.emit("player-disconnect", socket.id);
     });
 
     socket.on("setUserData", (userData) => {
@@ -93,7 +93,7 @@ setInterval(() => {
         }
     })
     if(playerData){
-        updateNameSpace.emit("playerData", playerData);
+        socketNamespace.emit("playerData", playerData);
     }
 }, 20);
 

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="author" content="Nicholas Coiner" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>3dgame</title>
+    </head>
+    <body>
+        <!-- Preloader -->
+        <div class="preloader">
+            <div class="preloader-wrapper">
+                <div class="progress-bar-container">
+                    <div class="progress-bar"></div>
+                </div>
+            </div>
+            <div class="progress-wrapper">
+                <div class="percent preloader-percentage1">00%</div>
+            </div>
+            <h1 class="preloader-title fade-in-out">
+                loading...
+            </h1>
+
+            <div class="name-form">
+                <input
+                    type="text"
+                    placeholder="name: "
+                    id="name-input"
+                    required
+                />
+            </div>
+            <button id="name-input-button">Continue</button>
+
+        </div>
+
+        
+        <div class="chat-box">
+            <div class="chat-container"></div>
+            <div class="form">
+                <label for="chat-message-input"></label>
+                <div class="message-input-wrapper hidden">
+                    <input type="text" id="chat-message-input" />
+                    <button id="chat-message-button">Send
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game -->
+        <div class="game-wrapper">
+            <canvas class="game-canvas"></canvas>
+        </div>
+
+        <script type="module" src="/index.js"></script>
+    </body>
+</html>
