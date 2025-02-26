@@ -1,6 +1,7 @@
 import {doFunny} from "./Jolt/JoltPhysics.js";
 import {initGraphics} from "./Graphics.js"
 import {addPlayer} from "./Player.js"
+import initJolt from "jolt-physics";
 
 
 export function startGame(){

@@ -5,8 +5,8 @@ import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";
 import WebGL from 'three/addons/capabilities/WebGL.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import Stats from 'three/examples/jsm/libs/stats.module'
-
 const gltfLoader = new GLTFLoader();
+
 // Graphics variables
 var container, stats;
 var camera, controls, scene, renderer;
@@ -27,7 +27,6 @@ var dynamicObjects = [];
 var onExampleUpdate;
 
 const DegreesToRadians = (deg) => deg * (Math.PI / 180.0);
-
 const wrapVec3 = (v) => new THREE.Vector3(v.GetX(), v.GetY(), v.GetZ());
 const unwrapVec3 = (v) => new Jolt.Vec3(v.x, v.y, v.z);
 const wrapRVec3 = wrapVec3;
@@ -170,13 +169,6 @@ function renderExample() {
 		objThree.position.copy(wrapVec3(body.GetPosition()));
 		objThree.quaternion.copy(wrapQuat(body.GetRotation()));
 
-		if (body.GetBodyType() == Jolt.EBodyType_SoftBody) {
-			if (objThree.userData.updateVertex) {
-				objThree.userData.updateVertex();
-			} else {
-				objThree.geometry = createMeshForShape(body.GetShape());
-			}
-		}
 	}
 
 	time += deltaTime;
@@ -339,114 +331,24 @@ function getThreeObjectForBody(body, color) {
 	return threeObject;
 }
 
-function createMeshFloor(n, cellSize, maxHeight, posX, posY, posZ) {
-	// Create regular grid of triangles
-	let height = function (x, y) { return Math.sin(x / 2) * Math.cos(y / 3); };
-	let triangles = new Jolt.TriangleList;
-	triangles.resize(n * n * 2);
-	for (let x = 0; x < n; ++x)
-		for (let z = 0; z < n; ++z) {
-			let center = n * cellSize / 2;
 
-			let x1 = cellSize * x - center;
-			let z1 = cellSize * z - center;
-			let x2 = x1 + cellSize;
-			let z2 = z1 + cellSize;
 
-			{
-				let t = triangles.at((x * n + z) * 2);
-				let v1 = t.get_mV(0), v2 = t.get_mV(1), v3 = t.get_mV(2);
-				v1.x = x1, v1.y = height(x, z), v1.z = z1;
-				v2.x = x1, v2.y = height(x, z + 1), v2.z = z2;
-				v3.x = x2, v3.y = height(x + 1, z + 1), v3.z = z2;
-			}
+export async function startGame(){
+    initJolt().then(function (Jolt) {
+    
+        console.log("Jolt init'd");
+        initExample(Jolt, null);
 
-			{
-				let t = triangles.at((x * n + z) * 2 + 1);
-				let v1 = t.get_mV(0), v2 = t.get_mV(1), v3 = t.get_mV(2);
-				v1.x = x1, v1.y = height(x, z), v1.z = z1;
-				v2.x = x2, v2.y = height(x + 1, z + 1), v2.z = z2;
-				v3.x = x2, v3.y = height(x + 1, z), v3.z = z1;
-			}
-		}
-	let materials = new Jolt.PhysicsMaterialList;
-	let shape = new Jolt.MeshShapeSettings(triangles, materials).Create().Get();
-	Jolt.destroy(triangles);
-	Jolt.destroy(materials);
 
-	// Create body
-	let creationSettings = new Jolt.BodyCreationSettings(shape, new Jolt.RVec3(posX, posY, posZ), new Jolt.Quat(0, 0, 0, 1), Jolt.EMotionType_Static, LAYER_NON_MOVING);
-	let body = bodyInterface.CreateBody(creationSettings);
-	Jolt.destroy(creationSettings);
-	addToScene(body, 0xc7c7c7);
+
+    })
 }
-
-function createVehicleTrack() {
-	const track = [
-		[[[38, 64, -14], [38, 64, -16], [38, -64, -16], [38, -64, -14], [64, -64, -16], [64, -64, -14], [64, 64, -16], [64, 64, -14]], [[-16, 64, -14], [-16, 64, -16], [-16, -64, -16], [-16, -64, -14], [10, -64, -16], [10, -64, -14], [10, 64, -16], [10, 64, -14]], [[10, -48, -14], [10, -48, -16], [10, -64, -16], [10, -64, -14], [38, -64, -16], [38, -64, -14], [38, -48, -16], [38, -48, -14]], [[10, 64, -14], [10, 64, -16], [10, 48, -16], [10, 48, -14], [38, 48, -16], [38, 48, -14], [38, 64, -16], [38, 64, -14]]],
-		[[[38, 48, -10], [38, 48, -14], [38, -48, -14], [38, -48, -10], [40, -48, -14], [40, -48, -10], [40, 48, -14], [40, 48, -10]], [[62, 62, -10], [62, 62, -14], [62, -64, -14], [62, -64, -10], [64, -64, -14], [64, -64, -10], [64, 62, -14], [64, 62, -10]], [[8, 48, -10], [8, 48, -14], [8, -48, -14], [8, -48, -10], [10, -48, -14], [10, -48, -10], [10, 48, -14], [10, 48, -10]], [[-16, 62, -10], [-16, 62, -14], [-16, -64, -14], [-16, -64, -10], [-14, -64, -14], [-14, -64, -10], [-14, 62, -14], [-14, 62, -10]], [[-14, -62, -10], [-14, -62, -14], [-14, -64, -14], [-14, -64, -10], [62, -64, -14], [62, -64, -10], [62, -62, -14], [62, -62, -10]], [[8, -48, -10], [8, -48, -14], [8, -50, -14], [8, -50, -10], [40, -50, -14], [40, -50, -10], [40, -48, -14], [40, -48, -10]], [[8, 50, -10], [8, 50, -14], [8, 48, -14], [8, 48, -10], [40, 48, -14], [40, 48, -10], [40, 50, -14], [40, 50, -10]], [[-16, 64, -10], [-16, 64, -14], [-16, 62, -14], [-16, 62, -10], [64, 62, -14], [64, 62, -10], [64, 64, -14], [64, 64, -10]]],
-		[[[-4, 22, -14], [-4, -14, -14], [-4, -14, -10], [4, -14, -14], [4, -14, -10], [4, 22, -14]], [[-4, -27, -14], [-4, -48, -14], [-4, -48, -11], [4, -48, -14], [4, -48, -11], [4, -27, -14]], [[-4, 50, -14], [-4, 30, -14], [-4, 30, -12], [4, 30, -14], [4, 30, -12], [4, 50, -14]], [[46, 50, -14], [46, 31, -14], [46, 50, -12], [54, 31, -14], [54, 50, -12], [54, 50, -14]], [[46, 16, -14], [46, -19, -14], [46, 16, -10], [54, -19, -14], [54, 16, -10], [54, 16, -14]], [[46, -28, -14], [46, -48, -14], [46, -28, -11], [54, -48, -14], [54, -28, -11], [54, -28, -14]]]
-	];
-
-	const mapColors = [0x666666, 0x006600, 0x000066];
-
-	let tempVec = new Jolt.Vec3(0, 1, 0);
-	const mapRot = Jolt.Quat.prototype.sRotation(tempVec, 0.5 * Math.PI);
-	let tempRVec = new Jolt.RVec3(0, 0, 0);
-	track.forEach((type, tIdx) => {
-		type.forEach(block => {
-			const hull = new Jolt.ConvexHullShapeSettings;
-			block.forEach(v => {
-				tempVec.Set(-v[1], v[2], v[0]);
-				hull.mPoints.push_back(tempVec);
-			});
-			const shape = hull.Create().Get();
-			tempRVec.Set(0, 10, 0);
-			const creationSettings = new Jolt.BodyCreationSettings(shape, tempRVec, mapRot, Jolt.EMotionType_Static, LAYER_NON_MOVING);
-			Jolt.destroy(hull);
-			const body = bodyInterface.CreateBody(creationSettings);
-			Jolt.destroy(creationSettings);
-			body.SetFriction(1.0);
-			addToScene(body, mapColors[tIdx]);
-		});
-	});
-	Jolt.destroy(tempVec);
-	Jolt.destroy(tempRVec);
-}
-
-function addLine(from, to, color) {
-	const material = new THREE.LineBasicMaterial({ color: color });
-	const points = [];
-	points.push(wrapRVec3(from));
-	points.push(wrapRVec3(to));
-	const geometry = new THREE.BufferGeometry().setFromPoints(points);
-	const line = new THREE.Line(geometry, material);
-	scene.add(line);
-}
-
-function addMarker(location, size, color) {
-	const material = new THREE.LineBasicMaterial({ color: color });
-	const points = [];
-	const center = wrapVec3(location);
-	points.push(center.clone().add(new THREE.Vector3(-size, 0, 0)));
-	points.push(center.clone().add(new THREE.Vector3(size, 0, 0)));
-	points.push(center.clone().add(new THREE.Vector3(0, -size, 0)));
-	points.push(center.clone().add(new THREE.Vector3(0, size, 0)));
-	points.push(center.clone().add(new THREE.Vector3(0, 0, -size)));
-	points.push(center.clone().add(new THREE.Vector3(0, 0, size)));
-	const geometry = new THREE.BufferGeometry().setFromPoints(points);
-	const line = new THREE.LineSegments(geometry, material);
-	scene.add(line);
-}
-
 export async function doFunny(){
     initJolt().then(function (Jolt) {
         console.log("Jolt init'd");
         // Initialize this example
         initExample(Jolt, null);
 
-        const container = document.querySelector("#game-canvas");
-        container.innerHTML = "";
         
 
 
@@ -458,7 +360,7 @@ export async function doFunny(){
         // Character movement properties
         const controlMovementDuringJump = true;					///< If false the character cannot change movement direction in mid air
         const characterSpeed = 6.0;
-        const jumpSpeed = 15.0;
+        const jumpSpeed = 0;
 
         const enableCharacterInertia = true;
 
@@ -488,7 +390,8 @@ export async function doFunny(){
         const threeGroup = new THREE.Group();
         gltfLoader.load('/models/car.glb',function ( gltf ) {
             const poggers = SkeletonUtils.clone(gltf.scene);
-            poggers.position.set(0,1.3,0);
+            poggers.position.set(0,0,0);
+            poggers.scale.multiplyScalar(0.01);
             threeGroup.add(poggers);
         },);
         
@@ -623,7 +526,7 @@ export async function doFunny(){
                 // While in air we allow sliding
                 allowSliding = true;
             }
-            _tmpVec3.Set(upRotationX, 0, upRotationZ);
+            _tmpVec3.Set(0, 0, 0);
             const characterUpRotation = Jolt.Quat.prototype.sEulerAngles(_tmpVec3);
             character.SetUp(characterUpRotation.RotateAxisY());
             character.SetRotation(characterUpRotation);
@@ -691,7 +594,7 @@ export async function doFunny(){
         // }
 
         
-            // Create a push-able block
+        // Create a push-able block
         const boxHalfExtent = 0.75;
         let shape = new Jolt.BoxShape(new Jolt.Vec3(boxHalfExtent, boxHalfExtent, boxHalfExtent));
         let creationSettings = new Jolt.BodyCreationSettings(shape, new Jolt.RVec3(-10.0, 5.0, 10.0),
