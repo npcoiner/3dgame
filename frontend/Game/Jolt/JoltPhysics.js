@@ -333,16 +333,6 @@ function getThreeObjectForBody(body, color) {
 
 
 
-export async function startGame(){
-    initJolt().then(function (Jolt) {
-    
-        console.log("Jolt init'd");
-        initExample(Jolt, null);
-
-
-
-    })
-}
 export async function doFunny(){
     initJolt().then(function (Jolt) {
         console.log("Jolt init'd");
