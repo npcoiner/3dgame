@@ -64,6 +64,8 @@ function initGraphics() {
 	renderer.setClearColor(0xbfd1e5);
 	renderer.setPixelRatio(window.devicePixelRatio);
 	renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFShadowMap ;
 
 	camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.2, 2000);
 	camera.position.set(0, 15, 30);
@@ -71,9 +73,13 @@ function initGraphics() {
 
 	scene = new THREE.Scene();
 
-	var dirLight = new THREE.DirectionalLight(0xffffff, 1);
-	dirLight.position.set(10, 10, 5);
-	scene.add(dirLight);
+	
+
+    var hemLight = new THREE.HemisphereLight(0x00ff00, 0x000000, 1);
+	scene.add(hemLight);
+    
+    var ambiLight = new THREE.AmbientLight(0xffffff, 1);
+    //scene.add(ambiLight);
 
 	controls = new OrbitControls(camera, container);
 
@@ -185,7 +191,8 @@ function renderExample() {
 function addToThreeScene(body, color) {
 	let threeObject = getThreeObjectForBody(body, color);
 	threeObject.userData.body = body;
-
+    threeObject.castShadow = true;
+    threeObject.receiveShadow = true;
 	scene.add(threeObject);
 	dynamicObjects.push(threeObject);
 }
@@ -294,7 +301,7 @@ function getSoftBodyMesh(body, material) {
 }
 
 function getThreeObjectForBody(body, color) {
-	let material = new THREE.MeshPhongMaterial({ color: color });
+	let material = new THREE.MeshStandardMaterial({ color: color });
 
 	let threeObject;
 
@@ -393,7 +400,7 @@ export async function doFunny(){
         // Character movement properties
         const controlMovementDuringJump = true;					///< If false the character cannot change movement direction in mid air
         const characterSpeed = 6.0;
-        const jumpSpeed = 0;
+        const jumpSpeed = 10;
 
         const enableCharacterInertia = true;
 
@@ -421,33 +428,45 @@ export async function doFunny(){
         const material = new THREE.MeshPhongMaterial({ color: 0xffff00 });
         let threeCharacter = new THREE.Mesh(geometry, material);
         const threeGroup = new THREE.Group();
-        gltfLoader.load('/models/car.glb',function ( gltf ) {
-            const poggers = SkeletonUtils.clone(gltf.scene);
-            poggers.position.set(0,1.1,0);
-            poggers.scale.multiplyScalar(1);
-            threeGroup.add(poggers);
-        },);
-
-        gltfLoader.load('models/testclassroom.glb', function (gltf) {
+        gltfLoader.load('/models/halo_mk_v_model.glb',function ( gltf ) {
             const model = SkeletonUtils.clone(gltf.scene);
             
-            console.log("loaded model");
-            console.log(model);
-            var meshes = [];
+            model.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+            // meshes.forEach((mesh) => {
+            //     //console.log("adding mesh");
+            //     mesh.castShadow = true;
+            //     mesh.receiveShadow = true;
+            //     threeGroup.add(mesh);
+            // });
+            // poggers.castShadow = true;
+            // poggers.receiveShadow = true;
+            model.rotateY(Math.PI * 5 / 6);
+            threeGroup.add(model);
+            
+        },);
 
-            model.children.forEach((child) => {
-                //if (!child) return; // Skip undefined nodes
-                //console.log(child);
-                //if (child.isMesh) {
+        gltfLoader.load('models/spooky.glb', function (gltf) {
+            const model = SkeletonUtils.clone(gltf.scene);
+            //console.log(model);
+            var meshes = [];
+            model.traverse((child) => {
                 if (child.isMesh) {
                     meshes.push(child);
                 }
-                
             });
             meshes.forEach((mesh) => {
+                //console.log("adding mesh");
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
                 scene.add(mesh);
                 createMeshCollider(mesh);
             });
+            //console.log("loaded model");
         }
         ,undefined, function (error) {
 
@@ -481,21 +500,21 @@ export async function doFunny(){
             
         
 
-        const lavaObject = createBox(new Jolt.RVec3(0, -50, 0), Jolt.Quat.prototype.sIdentity(), new Jolt.Vec3(1000, 2, 1000), Jolt.EMotionType_Static, LAYER_NON_MOVING, 0xcc2222);
+        const lavaObject = createBox(new Jolt.RVec3(0, -100, 0), Jolt.Quat.prototype.sIdentity(), new Jolt.Vec3(1000, 2, 1000), Jolt.EMotionType_Static, LAYER_NON_MOVING, 0x000000);
         const lavaObjectId = lavaObject.GetID().GetIndexAndSequenceNumber();
         let isInLava = false;
         
-        const conveyorBeltObject = createBox(new Jolt.RVec3(0, 0, -10), Jolt.Quat.prototype.sIdentity(), new Jolt.Vec3(10, 0.25, 2), Jolt.EMotionType_Static, LAYER_NON_MOVING, 0x2222cc);
-        const conveyorBeltObjectId = conveyorBeltObject.GetID().GetIndexAndSequenceNumber();
+        // const conveyorBeltObject = createBox(new Jolt.RVec3(0, 0, -10), Jolt.Quat.prototype.sIdentity(), new Jolt.Vec3(10, 0.25, 2), Jolt.EMotionType_Static, LAYER_NON_MOVING, 0x2222cc);
+        // const conveyorBeltObjectId = conveyorBeltObject.GetID().GetIndexAndSequenceNumber();
 
         const characterContactListener = new Jolt.CharacterContactListenerJS();
         characterContactListener.OnAdjustBodyVelocity = (character, body2, linearVelocity, angularVelocity) => {
             body2 = Jolt.wrapPointer(body2, Jolt.Body);
             linearVelocity = Jolt.wrapPointer(linearVelocity, Jolt.Vec3);
             // Apply artificial velocity to the character when standing on the conveyor belt
-            if (body2.GetID().GetIndexAndSequenceNumber() == conveyorBeltObjectId) {
-                linearVelocity.SetX(linearVelocity.GetX() + 5);
-            }
+            // if (body2.GetID().GetIndexAndSequenceNumber() == conveyorBeltObjectId) {
+            //     linearVelocity.SetX(linearVelocity.GetX() + 5);
+            // }
         }
         characterContactListener.OnContactValidate = (character, bodyID2, subShapeID2) => {
             bodyID2 = Jolt.wrapPointer(bodyID2, Jolt.BodyID);
@@ -539,7 +558,7 @@ export async function doFunny(){
         const prePhysicsUpdate = (deltaTime) => {
             if (isInLava) {
                 // Teleport the user back to the origin if they fall off the platform
-                _tmpRVec3.Set(0, 10, 0);
+                _tmpRVec3.Set(0, 30, 0);
                 character.SetPosition(_tmpRVec3);
                 isInLava = false;
             }
@@ -606,7 +625,7 @@ export async function doFunny(){
                 newVelocity = groundVelocity;
 
                 // Jump
-                if (true && movingTowardsGround)
+                if (jump && movingTowardsGround)
                     newVelocity.add(characterUp.multiplyScalar(jumpSpeed));
             }
             else
@@ -653,13 +672,13 @@ export async function doFunny(){
         // Create a push-able block
         const boxHalfExtent = 0.75;
         let shape = new Jolt.BoxShape(new Jolt.Vec3(boxHalfExtent, boxHalfExtent, boxHalfExtent));
-        let creationSettings = new Jolt.BodyCreationSettings(shape, new Jolt.RVec3(-10.0, 5.0, 10.0),
+        let creationSettings = new Jolt.BodyCreationSettings(shape, new Jolt.RVec3(0, 10.0, 0),
             Jolt.Quat.prototype.sIdentity(), Jolt.EMotionType_Dynamic, LAYER_MOVING);
         creationSettings.mFriction = 1;
         creationSettings.mOverrideMassProperties = Jolt.EOverrideMassProperties_CalculateInertia;
         creationSettings.mMassPropertiesOverride.mMass = 1;
         
-        for(var i = 0; i < 20; i++){
+        for(var i = 0; i < 100; i++){
             let body = bodyInterface.CreateBody(creationSettings);
             addToScene(body, 0x00ffff);
         }
@@ -683,11 +702,25 @@ export async function doFunny(){
         threeCharacter.geometry = threeStandingGeometry;
         threeCharacter.userData.body = character;
 
-        const headHeight = new THREE.Vector3(0,5,0);
-        
+        var dirLight = new THREE.DirectionalLight(0xffffff, 1);
+        dirLight.position.set(0, 1, 0);
+        dirLight.shadow.mapSize.width = 2048; 
+        dirLight.shadow.mapSize.height = 2048; 
+        dirLight.castShadow = true; // default false
+        dirLight.shadow.bias =- 0.001;
+        dirLight.shadow.camera.top = 100;
+        dirLight.shadow.camera.bottom = - 100;
+        dirLight.shadow.camera.left = - 100;
+        dirLight.shadow.camera.right = 100;
+        dirLight.shadow.autoUpdate = true;
+        scene.add(dirLight);
+
+        var shadowHelper = new THREE.CameraHelper( dirLight.shadow.camera );
+        scene.add( shadowHelper );
+
         
         controls.minDistance = 1e-4;
-        controls.maxDistance = 1e-4;
+        controls.maxDistance = 10;
         //threeGroup.add(threeCharacter);
         scene.add(threeGroup);
         const input = {
@@ -699,7 +732,7 @@ export async function doFunny(){
             crouched: false
         }
 
-    
+        const headHeight = new THREE.Vector3(0,5,0);
         const cameraRotation = new THREE.Quaternion();
         const yawEuler = new THREE.Euler();
         onExampleUpdate = (time, deltaTime) => {
