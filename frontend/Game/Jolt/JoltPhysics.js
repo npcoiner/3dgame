@@ -333,6 +333,49 @@ function getThreeObjectForBody(body, color) {
 
 
 
+function createMeshCollider(mesh) {
+    const geometry = mesh.geometry;
+    //geometry.computeVertexNormals(); // Ensure normals are available
+    console.log("Creating mesh for:")
+    console.log(geometry);
+    const positions = geometry.attributes.position.array;
+    const indices = geometry.index ? geometry.index.array : null;
+
+    const verts = new Jolt.VertexList();
+    const tris = new Jolt.IndexedTriangleList();
+
+    for (let i = 0; i < positions.length; i += 3) {
+        verts.push_back(new Jolt.Float3(positions[i], positions[i + 1], positions[i + 2]));
+    }
+
+    if (indices) {
+        for (let i = 0; i < indices.length; i+= 3) {
+            console.log("pushing triangles");
+            tris.push_back(
+                new Jolt.IndexedTriangle(
+                    indices[i],
+                    indices[i + 1],
+                    indices[i + 2],
+                    0
+                )
+            )
+        }
+    } 
+
+    const meshSettings = new Jolt.MeshShapeSettings(verts, tris, new Jolt.PhysicsMaterialList());
+
+    const shape = meshSettings.Create().Get(); 
+
+    const position = new Jolt.Vec3(mesh.position.x, mesh.position.y, mesh.position.z);
+    const staticBodySettings = new Jolt.BodyCreationSettings(shape, position, Jolt.Quat.prototype.sIdentity(), Jolt.EMotionType_Static, LAYER_NON_MOVING);
+
+    const body = bodyInterface.CreateBody(staticBodySettings);
+    bodyInterface.AddBody(body.GetID(), Jolt.EActivation_DontActivate);
+    Jolt.destroy(staticBodySettings);
+}
+
+
+
 export async function doFunny(){
     initJolt().then(function (Jolt) {
         console.log("Jolt init'd");
@@ -380,10 +423,36 @@ export async function doFunny(){
         const threeGroup = new THREE.Group();
         gltfLoader.load('/models/car.glb',function ( gltf ) {
             const poggers = SkeletonUtils.clone(gltf.scene);
-            poggers.position.set(0,0,0);
-            poggers.scale.multiplyScalar(0.01);
+            poggers.position.set(0,1.1,0);
+            poggers.scale.multiplyScalar(1);
             threeGroup.add(poggers);
         },);
+
+        gltfLoader.load('models/testclassroom.glb', function (gltf) {
+            const model = SkeletonUtils.clone(gltf.scene);
+            
+            console.log("loaded model");
+            console.log(model);
+            var meshes = [];
+
+            model.children.forEach((child) => {
+                //if (!child) return; // Skip undefined nodes
+                //console.log(child);
+                //if (child.isMesh) {
+                if (child.isMesh) {
+                    meshes.push(child);
+                }
+                
+            });
+            meshes.forEach((mesh) => {
+                scene.add(mesh);
+                createMeshCollider(mesh);
+            });
+        }
+        ,undefined, function (error) {
+
+            console.error(error);
+        });
         
         let desiredVelocity = new THREE.Vector3();
 
@@ -415,7 +484,7 @@ export async function doFunny(){
         const lavaObject = createBox(new Jolt.RVec3(0, -50, 0), Jolt.Quat.prototype.sIdentity(), new Jolt.Vec3(1000, 2, 1000), Jolt.EMotionType_Static, LAYER_NON_MOVING, 0xcc2222);
         const lavaObjectId = lavaObject.GetID().GetIndexAndSequenceNumber();
         let isInLava = false;
-
+        
         const conveyorBeltObject = createBox(new Jolt.RVec3(0, 0, -10), Jolt.Quat.prototype.sIdentity(), new Jolt.Vec3(10, 0.25, 2), Jolt.EMotionType_Static, LAYER_NON_MOVING, 0x2222cc);
         const conveyorBeltObjectId = conveyorBeltObject.GetID().GetIndexAndSequenceNumber();
 
@@ -517,10 +586,7 @@ export async function doFunny(){
                 allowSliding = true;
             }
             _tmpVec3.Set(0, 0, 0);
-            const characterUpRotation = Jolt.Quat.prototype.sEulerAngles(_tmpVec3);
-            character.SetUp(characterUpRotation.RotateAxisY());
-            character.SetRotation(characterUpRotation);
-            const upRotation = wrapQuat(characterUpRotation);
+            
 
             character.UpdateGroundVelocity();
             const characterUp = wrapVec3(character.GetUp());
@@ -540,18 +606,18 @@ export async function doFunny(){
                 newVelocity = groundVelocity;
 
                 // Jump
-                if (jump && movingTowardsGround)
+                if (true && movingTowardsGround)
                     newVelocity.add(characterUp.multiplyScalar(jumpSpeed));
             }
             else
                 newVelocity = currentVerticalVelocity.clone();
 
             // Gravity
-            newVelocity.add(gravity.multiplyScalar(deltaTime).applyQuaternion(upRotation));
+            newVelocity.add(gravity.multiplyScalar(deltaTime));
 
             if (playerControlsHorizontalVelocity) {
                 // Player input
-                newVelocity.add(desiredVelocity.clone().applyQuaternion(upRotation));
+                newVelocity.add(desiredVelocity.clone());
             } else {
                 // Preserve horizontal velocity
                 const currentHorizontalVelocity = linearVelocity.sub(currentVerticalVelocity);
@@ -565,7 +631,7 @@ export async function doFunny(){
         
 
         // Create a basic floor
-        createFloor();
+        // createFloor();
 
         // createBox(new Jolt.RVec3(-45, 1, 0), Jolt.Quat.prototype.sIdentity(), new Jolt.Vec3(0.5, 2, 45), Jolt.EMotionType_Static, LAYER_NON_MOVING);
         // createBox(new Jolt.RVec3(45, 1, 0), Jolt.Quat.prototype.sIdentity(), new Jolt.Vec3(0.5, 2, 45), Jolt.EMotionType_Static, LAYER_NON_MOVING);
@@ -617,7 +683,11 @@ export async function doFunny(){
         threeCharacter.geometry = threeStandingGeometry;
         threeCharacter.userData.body = character;
 
-        controls.target = threeGroup.position;
+        const headHeight = new THREE.Vector3(0,5,0);
+        
+        
+        controls.minDistance = 1e-4;
+        controls.maxDistance = 1e-4;
         //threeGroup.add(threeCharacter);
         scene.add(threeGroup);
         const input = {
@@ -629,20 +699,25 @@ export async function doFunny(){
             crouched: false
         }
 
+    
         const cameraRotation = new THREE.Quaternion();
+        const yawEuler = new THREE.Euler();
         onExampleUpdate = (time, deltaTime) => {
             camera.getWorldQuaternion(cameraRotation);
+            yawEuler.setFromQuaternion(cameraRotation,'YXZ');
             let forward = input.forwardPressed ? 1.0 : (input.backwardPressed ? -1.0 : 0.0);
             let right = input.rightPressed ? 1.0 : (input.leftPressed ? -1.0 : 0.0);
             const cameraDirectionV = new THREE.Vector3(right, 0, -forward).applyQuaternion(cameraRotation);
             cameraDirectionV.y = 0;
             cameraDirectionV.normalize().multiplyScalar(2);
             handleInput(cameraDirectionV, input.jump, input.switchStance, deltaTime);
-
             const oldPosition = wrapVec3(character.GetPosition());
             prePhysicsUpdate(deltaTime)
             const newdPosition = wrapVec3(character.GetPosition());
             camera.position.add(newdPosition.sub(oldPosition));
+            threeGroup.getWorldPosition(controls.target);
+            controls.target.add(headHeight);
+            threeGroup.rotation.y = yawEuler.y;
         }
 
         document.addEventListener("keydown", onDocumentKeyDown, false);

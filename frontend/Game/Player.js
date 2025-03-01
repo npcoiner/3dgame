@@ -1,4 +1,4 @@
-import {scene, controls} from "./Graphics";
+import {scene, controls} from "./Graphics_old.js";
 import * as THREE from "three";
 
 export function addPlayer(){

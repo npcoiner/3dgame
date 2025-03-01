@@ -1,4 +1,11 @@
 import Jolt from "jolt-physics";
+import initJolt from "jolt-physics";
+import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";
+import WebGL from 'three/addons/capabilities/WebGL.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import Stats from 'three/examples/jsm/libs/stats.module'
 
 // Graphics variables
 var container, stats;
@@ -42,6 +49,14 @@ export function initPhysics(){
     Jolt.destroy(settings); //C++ conventions, no GC on wasm? 
     physicsSystem = jolt.GetPhysicsSystem();
     bodyInterface = physicsSystem.GetBodyInterface();
-
-
 }
+
+export function updatePhysics(deltaTime){
+    // When running below 55 Hz, do 2 steps instead of 1
+	var numSteps = deltaTime > 1.0 / 55.0 ? 2 : 1;
+
+	// Step the physics world
+	joltInterface.Step(deltaTime, numSteps);
+}
+
+//Update objects based on transforms
