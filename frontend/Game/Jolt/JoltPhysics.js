@@ -684,7 +684,12 @@ export async function doFunny(){
         }
             
         
-
+        //Add sprite
+        const kaylaMap = new THREE.TextureLoader().load('models/kayla.png');
+        const kaylaMat = new THREE.SpriteMaterial({map: kaylaMap});
+        const kaylaSprite = new THREE.Sprite(kaylaMat);
+        scene.add(kaylaSprite);
+        kaylaSprite.position.set(0,-40,0);
 
         const settings = new Jolt.CharacterVirtualSettings();
         settings.mMass = 1000;

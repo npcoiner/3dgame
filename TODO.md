@@ -1,0 +1,1 @@
+Rewrite everything to be handled by spacetimedb. Physics client side + server side checks for simple things (dependent on game ofc)
