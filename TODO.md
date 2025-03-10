@@ -1,1 +1,3 @@
 Rewrite everything to be handled by spacetimedb. Physics client side + server side checks for simple things (dependent on game ofc)
+
+General rule of thumb. Calculate on client, validate on server. That is it. Do not handle everything on the server! Even in spacetimedb's video, where they showcase many objects colliding (supposedly entirely on spacetimedb), their client for their own mmo game Bitcraft uses A* search for click-based movement and the server simply verifies that the movement is valid. Complexity of verifying is O(path-length) whereas complexity of A* is O(something obsurd). I dare not mention A* true BigO, because if I speak it, I will summon a BigO demon inadvertently. That's how terrifying it is.
